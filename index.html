@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>وصول التيرمينال — محرّر</title>
+  <title>شات بوت ذكي — محرّر</title>
   <style>
     :root {
-      --main-color: #ff0033;
+      --main-color: #00ff00;
       --bg-color: #050000;
-      --panel-bg: rgba(20, 0, 0, 0.85);
-      --muted: #999;
+      --panel-bg: rgba(0, 20, 0, 0.85);
+      --muted: #666;
+      --dark-green: #003300;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
     body {
@@ -22,11 +23,11 @@
       text-shadow: 0 0 5px var(--main-color);
     }
 
-    .bg-grid { position: fixed; inset: 0; background: radial-gradient(circle, rgba(255,0,51,0.08) 0%, rgba(0,0,0,0.95) 100%); z-index: -1; }
+    .bg-grid { position: fixed; inset: 0; background: radial-gradient(circle, rgba(0,255,0,0.08) 0%, rgba(0,0,0,0.95) 100%); z-index: -1; }
 
     header {
       padding: 12px 16px;
-      border-bottom: 1px solid var(--main-color);
+      border-bottom: 2px solid var(--main-color);
       background: var(--panel-bg);
       display: flex;
       align-items: center;
@@ -34,490 +35,363 @@
       gap: 12px;
     }
 
-    header h1 { font-size: 16px; letter-spacing: 1px; }
+    header h1 { font-size: 18px; letter-spacing: 2px; }
     header nav { display: flex; gap: 8px; align-items: center; }
     .btn { background: var(--main-color); color:#000; border:none; padding:8px 12px; font-weight:600; cursor:pointer; border-radius:4px; }
     .ghost { background: transparent; border:1px solid var(--main-color); color:var(--main-color); }
+    .btn:hover { opacity: 0.8; }
 
-    main { display: flex; gap: 16px; padding: 16px; flex: 1; overflow: hidden; }
+    main { display: flex; flex-direction: column; gap: 0; padding: 0; flex: 1; overflow: hidden; }
 
-    /* Left: Terminal / Login column */
-    .col { flex: 1 1 480px; display:flex; flex-direction:column; gap:12px; min-width: 320px; }
+    /* Chat container */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-bottom: 1px solid var(--main-color);
+    }
 
-    .panel { background: var(--panel-bg); border:1px solid var(--main-color); padding:12px; border-radius:8px; box-shadow: 0 0 12px rgba(255,0,51,0.15); overflow: hidden; }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
 
-    /* Login */
-    #login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 8px; }
-    .login-box { width:100%; max-width:360px; text-align:center; }
-    label { display:block; margin-bottom:8px; font-size:15px; color:var(--main-color); }
-    input[type="password"] { width:100%; padding:10px; background:#000; border:1px solid var(--main-color); color:var(--main-color); text-align:center; font-size:16px; letter-spacing:6px; direction:ltr; }
+    .message {
+      display: flex;
+      gap: 8px;
+      animation: slideIn 0.3s ease;
+    }
 
-    /* Terminal */
-    #terminal-screen { display:none; flex-direction:column; padding:8px; gap:8px; height: 320px; overflow:auto; }
-    .terminal-log { font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-word; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-    /* Editor column */
-    .editor { flex: 1 1 520px; display:flex; flex-direction:column; gap:8px; min-width: 360px; }
-    .editor .controls { display:flex; gap:8px; align-items:center; }
-    .editor input[type="text"] { flex:1; padding:8px; background:#000; border:1px solid var(--main-color); color:var(--main-color); }
-    .editor textarea { flex:1; min-height:320px; resize:vertical; padding:12px; background:#000; border:1px solid var(--main-color); color:var(--main-color); font-size:15px; line-height:1.6; }
+    .message.user {
+      flex-direction: row-reverse;
+    }
 
-    .drafts { max-height: 240px; overflow:auto; padding:8px; display:flex; flex-direction:column; gap:6px; }
-    .draft-item { display:flex; justify-content:space-between; gap:8px; background:rgba(0,0,0,0.15); padding:8px; border-radius:6px; align-items:center; }
-    .muted { color:var(--muted); font-size:13px; }
+    .message.bot {
+      flex-direction: row;
+    }
 
-    .status-bar { padding:10px; border-top:1px solid var(--main-color); background: var(--panel-bg); font-size:12px; display:flex; justify-content:space-between; align-items:center; }
+    .message-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
 
-    .error-msg { color:#ff6666; margin-top:10px; font-size:12px; display:none; }
+    .message.user .message-avatar {
+      background: rgba(0, 255, 0, 0.2);
+      border: 1px solid var(--main-color);
+    }
 
-    @media (prefers-reduced-motion: reduce) { .terminal-log { transition:none !important; } }
+    .message.bot .message-avatar {
+      background: rgba(0, 255, 0, 0.3);
+      border: 2px solid var(--main-color);
+    }
 
-    footer { padding:8px 16px; font-size:12px; color:var(--muted); }
+    .message-bubble {
+      max-width: 70%;
+      padding: 10px 14px;
+      border-radius: 6px;
+      word-wrap: break-word;
+      font-size: 14px;
+      line-height: 1.5;
+    }
 
-    /* modal */
-    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); z-index: 40; }
-    .modal .panel { max-width: 520px; width: 100%; }
+    .message.user .message-bubble {
+      background: rgba(0, 255, 0, 0.15);
+      border: 1px solid rgba(0, 255, 0, 0.3);
+      color: var(--main-color);
+    }
 
-    /* focus */
-    :focus { outline: 3px solid rgba(255,0,51,0.25); outline-offset:3px; }
+    .message.bot .message-bubble {
+      background: rgba(0, 255, 0, 0.08);
+      border: 1px solid rgba(0, 255, 0, 0.5);
+      color: var(--main-color);
+    }
 
+    .message.bot .message-bubble strong {
+      color: #00ff00;
+    }
+
+    /* Input area */
+    .chat-input-area {
+      padding: 12px 16px;
+      background: var(--panel-bg);
+      border-top: 1px solid var(--main-color);
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    #messageInput {
+      flex: 1;
+      padding: 10px 12px;
+      background: #000;
+      border: 1px solid var(--main-color);
+      color: var(--main-color);
+      border-radius: 4px;
+      font-size: 14px;
+      resize: none;
+      max-height: 100px;
+    }
+
+    #messageInput::placeholder {
+      color: var(--muted);
+    }
+
+    #messageInput:focus {
+      outline: none;
+      box-shadow: 0 0 8px rgba(0, 255, 0, 0.3);
+    }
+
+    .send-btn {
+      padding: 10px 16px;
+      align-self: center;
+    }
+
+    .status-bar { 
+      padding: 10px 16px; 
+      border-top:1px solid var(--main-color); 
+      background: var(--panel-bg); 
+      font-size: 12px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+    }
+
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 10px;
+    }
+
+    .typing-indicator span {
+      width: 8px;
+      height: 8px;
+      background: var(--main-color);
+      border-radius: 50%;
+      animation: typing 1.4s infinite;
+    }
+
+    .typing-indicator span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-indicator span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes typing {
+      0%, 60%, 100% { opacity: 0.3; }
+      30% { opacity: 1; }
+    }
+
+    footer { padding:8px 16px; font-size:11px; color:var(--muted); }
+
+    :focus { outline: 2px solid rgba(0, 255, 0, 0.3); outline-offset: 2px; }
+
+    /* Scrollbar styling */
+    .chat-messages::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .chat-messages::-webkit-scrollbar-track {
+      background: rgba(0, 255, 0, 0.05);
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+      background: rgba(0, 255, 0, 0.3);
+      border-radius: 4px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 255, 0, 0.5);
+    }
   </style>
 </head>
 <body>
   <div class="bg-grid" aria-hidden="true"></div>
 
   <header role="banner">
-    <h1>RED-TERMINAL — محرّر الكتابات</h1>
+    <h1>🤖 BOT-CHAT — بوت ذكي أخضر</h1>
     <nav>
-      <button id="open-editor" class="btn">محرّر</button>
-      <button id="show-terminal" class="btn ghost">التيرمينال</button>
-      <button id="publishToggle" class="btn">نشر (أوتوماتيكي)</button>
+      <button id="clearChat" class="btn ghost">مسح</button>
     </nav>
   </header>
 
   <main>
-    <section class="col">
-      <div class="panel" id="login-panel">
-        <div id="login-screen">
-          <div class="login-box">
-            <h3 id="login-title">حطّ الكود متاعك</h3>
-            <form id="accessForm" novalidate>
-              <label for="accessCode">كود من 5 أرقام</label>
-              <input type="password" id="accessCode" name="accessCode" inputmode="numeric" pattern="\d{5}" maxlength="5" autocomplete="one-time-code" aria-describedby="error" aria-required="true" dir="ltr" />
-              <div style="height:8px"></div>
-              <button type="submit" id="confirmBtn" class="btn">أكّد</button>
-              <div id="error" class="error-msg" role="alert" aria-live="assertive">الكود غالط! عاود جرّب</div>
-            </form>
-          </div>
-        </div>
-
-        <div id="terminal-screen" aria-hidden="true">
-          <div class="terminal-log" id="log" role="log" aria-live="polite" aria-atomic="false" tabindex="-1"></div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="muted">نجم تعرض التيرمينال أو تكتب مقالات في العمود الجنب</div>
-      </div>
-    </section>
-
-    <section class="editor panel">
-      <div class="controls">
-        <input type="text" id="title" placeholder="عنوان الكتابة" aria-label="عنوان" />
-        <button id="suggestTitleBtn" class="btn ghost">اقترح عنوان</button>
-        <button id="saveBtn" class="btn">حفظ مسودة</button>
-        <button id="downloadBtn" class="btn ghost">تحميل</button>
-      </div>
-
-      <textarea id="content" placeholder="اكتب توا -- النص محفوظ محلياً تلقائياً" aria-label="محتوى الكتابة"></textarea>
-
-      <div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><strong>قائمة المسودات</strong><span id="autosaveStatus" class="muted">—</span></div>
-        <div class="drafts" id="draftsList" aria-live="polite"></div>
-      </div>
+    <section class="chat-container">
+      <div class="chat-messages" id="chatMessages" role="log" aria-live="polite" aria-label="نقاش الدردشة"></div>
     </section>
   </main>
 
+  <div class="chat-input-area">
+    <textarea id="messageInput" placeholder="اكتب كود أو سؤال الآن..." aria-label="حقل الإدخال" rows="1"></textarea>
+    <button id="sendBtn" class="btn send-btn">أرسل ➤</button>
+  </div>
+
   <div class="status-bar" role="contentinfo">
-    <span>STATUS: <span id="status-text" aria-live="polite">LOCKED</span></span>
-    <span>DEVICE: MOBILE_NODE</span>
+    <span>STATUS: <span id="status-text" aria-live="polite">READY</span></span>
+    <span>MODE: AI-CHAT</span>
   </div>
 
-  <footer>التخزين محلي — المسودات محفوظة في المتصفح. لإرسالها للـ GitHub يلزم Token. الموقع جاهز للنشر عبر GitHub Pages بعد تفعيل Pages في Settings أو عبر Action (انظر التعليمات).</footer>
-
-  <!-- Publish modal -->
-  <div id="publishModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="publishTitle">
-    <div class="panel">
-      <h3 id="publishTitle">نشر المسودة على GitHub (فرع + PR)</h3>
-      <p class="muted">العمليات هاذي تعمل مباشرة في الحساب متاعك عبر GitHub API. ما ننجمش نشوف التوكن متاعك — التوكن يُخزّن في المتصفح فقط إذا اخترت "تذكّر التوكن".</p>
-      <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
-        <label>Personal Access Token (PAT) — يلزموه scope: <code>repo</code> أو <code>public_repo</code> إذا الريبو عام</label>
-        <input id="patInput" type="password" placeholder="ghp_..." style="padding:8px; background:#000; border:1px solid var(--main-color); color:var(--main-color);" />
-        <label><input type="checkbox" id="rememberToken" /> تذكّر التوكن في هذا المتصفح</label>
-        <div style="display:flex; gap:8px;">
-          <button id="publishNow" class="btn">نشر الآن</button>
-          <button id="closeModal" class="btn ghost">إلغاء</button>
-        </div>
-        <div id="publishStatus" class="muted">—</div>
-      </div>
-    </div>
-  </div>
+  <footer>بوت ذكي يرد عليك في الحال. اكتب أي سؤال أو كود!</footer>
 
   <script>
-    // Repo info
-    const OWNER = 'salhie026-a11y';
-    const REPO = 'louay';
+    // AI responses - نسخة محسنة مع ذكاء بسيط
+    const responses = {
+      hello: "السلام عليكم! 👋 كيفك أنت؟ أنا بوت أخضر جاهز باش نساعدك!",
+      hi: "مرحبا! 😊 شنوّ أخبارك؟ شنوّ اللي باش نساعدك فيه?",
+      code: "عندك كود؟ 💻 نجم نقرا فيه وننشري لك التصحيح!",
+      help: "بنّاء عليك شنوّ اللي تحتاج؟\n- اكتب أي سؤال عام\n- شارك كود تحتاج تصحيحه\n- اسأل عن البرمجة",
+      javascript: "JavaScript؟ 🎯 لغة ديالة الويب زعمة! أنا فاهم فيها كويس. شنوّ المشكلة?",
+      python: "Python؟ 🐍 لغة قوية! اكتب الكود وأنا نحاول نساعدك فيه.",
+      html: "HTML؟ 🏗️ زعمة بناء الصفحات! تحتاج حاجة معينة?",
+      css: "CSS؟ 🎨 تنسيق وألوان! أنا فاهم الأنماط والتصاميم.",
+      bug: "وقعت في باگ؟ 🐛 حط لي الكود والرسالة الحمراء وأنا نقول لك الحل!",
+      error: "في خطأ؟ 🔴 لا تقلق، نجم أساعدك! حط لي الرسالة الدقيقة.",
+      thanks: "العفو! 😊 أنا هنا باش ما حتاش شي!",
+      bye: "مع السلامة! 👋 باش تحتاج شي حاجة أخرى ؟",
+      default: "حاصل بالضبط! 💚 قول لي الحاجة بالضبط وأنا نحاول نفهمك أحسن!"
+    };
 
-    // Terminal/login logic
-    const CORRECT_CODE = "55541";
-    const logs = [
-      "[SYSTEM] الوصول مقبول. مرحبا بيك قائد.",
-      "[INFO] ربط بالنود المحمية...",
-      "[NET] التبادل مشفّر.",
-      "[OK] تجاوز الحائط الناري الثاني...",
-      "[DATA] نستخرج لوجات السيرفر...",
-      "[WARN] نقطة وصول غير موثوق فيها.",
-      "[SYSTEM] تهيئة RED-PROTOCOL...",
-      "[OK] السيستام واجد للأوامر."
-    ];
-
-    const form = document.getElementById('accessForm');
-    const input = document.getElementById('accessCode');
-    const errorDiv = document.getElementById('error');
-    const loginScreen = document.getElementById('login-screen');
-    const terminalScreen = document.getElementById('terminal-screen');
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const clearBtn = document.getElementById('clearChat');
     const statusText = document.getElementById('status-text');
-    const logDiv = document.getElementById('log');
-    const showTerminalBtn = document.getElementById('show-terminal');
-    const openEditorBtn = document.getElementById('open-editor');
 
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      const value = input.value.trim();
-      if (value === CORRECT_CODE) {
-        loginScreen.style.display = 'none';
-        loginScreen.setAttribute('aria-hidden', 'true');
-        terminalScreen.style.display = 'block';
-        terminalScreen.setAttribute('aria-hidden', 'false');
-        statusText.innerText = 'ONLINE';
-        errorDiv.style.display = 'none';
-        logDiv.innerHTML = '';
-        logDiv.focus();
-        runTerminal();
-      } else {
-        errorDiv.style.display = 'block';
-        errorDiv.focus();
-      }
+    // Auto-resize textarea
+    messageInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 100) + 'px';
     });
 
-    function runTerminal() {
-      let index = 0;
-      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (prefersReduced) {
-        logDiv.innerHTML = logs.join('\n').replace(/\n/g, '<br>');
-        return;
-      }
-      const interval = setInterval(() => {
-        if (index < logs.length) {
-          logDiv.innerHTML += logs[index] + '<br>';
-          index++;
-          logDiv.scrollTop = logDiv.scrollHeight;
-        } else {
-          clearInterval(interval);
+    // Send message
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      // Add user message
+      addMessage(text, 'user');
+      messageInput.value = '';
+      messageInput.style.height = 'auto';
+
+      // Bot typing indicator
+      showTypingIndicator();
+      statusText.innerText = 'THINKING...';
+
+      // Simulate processing delay
+      setTimeout(() => {
+        const response = generateResponse(text);
+        removeTypingIndicator();
+        addMessage(response, 'bot');
+        statusText.innerText = 'READY';
+        // Auto scroll
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }, 800 + Math.random() * 700);
+    }
+
+    function addMessage(text, sender) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${sender}`;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'message-avatar';
+      avatar.innerText = sender === 'user' ? 'أنت' : '🤖';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      bubble.innerHTML = text;
+
+      messageDiv.appendChild(avatar);
+      messageDiv.appendChild(bubble);
+      chatMessages.appendChild(messageDiv);
+    }
+
+    function showTypingIndicator() {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message bot';
+      messageDiv.id = 'typing-indicator';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'message-avatar';
+      avatar.innerText = '🤖';
+
+      const typing = document.createElement('div');
+      typing.className = 'typing-indicator';
+      typing.innerHTML = '<span></span><span></span><span></span>';
+
+      messageDiv.appendChild(avatar);
+      messageDiv.appendChild(typing);
+      chatMessages.appendChild(messageDiv);
+    }
+
+    function removeTypingIndicator() {
+      const indicator = document.getElementById('typing-indicator');
+      if (indicator) indicator.remove();
+    }
+
+    function generateResponse(userText) {
+      const lower = userText.toLowerCase();
+
+      // Search for keywords
+      for (const [key, response] of Object.entries(responses)) {
+        if (lower.includes(key)) {
+          return response;
         }
-      }, 800);
-    }
-
-    // Editor functionality (localStorage drafts)
-    const DRAFTS_KEY = 'louay_drafts_v1';
-    const titleEl = document.getElementById('title');
-    const contentEl = document.getElementById('content');
-    const suggestTitleBtn = document.getElementById('suggestTitleBtn');
-    const saveBtn = document.getElementById('saveBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const draftsList = document.getElementById('draftsList');
-    const autosaveStatus = document.getElementById('autosaveStatus');
-
-    function loadDrafts() {
-      try {
-        const raw = localStorage.getItem(DRAFTS_KEY);
-        return raw ? JSON.parse(raw) : [];
-      } catch (e) {
-        console.error('Failed to load drafts', e);
-        return [];
       }
-    }
 
-    function saveDraft(title, content) {
-      const drafts = loadDrafts();
-      const id = Date.now();
-      drafts.unshift({ id, title: title || 'بدون عنوان', content, updated: new Date().toISOString() });
-      localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
-      renderDrafts();
-      autosaveStatus.innerText = 'محفوظ';
-      setTimeout(() => { autosaveStatus.innerText = '—'; }, 1500);
-    }
-
-    function renderDrafts() {
-      const drafts = loadDrafts();
-      draftsList.innerHTML = '';
-      if (drafts.length === 0) {
-        draftsList.innerHTML = '<div class="muted">ما ثمّش مسودات</div>';
-        return;
+      // If it looks like code, give code response
+      if (lower.includes('{') || lower.includes('[') || lower.includes('function') || lower.includes('const')) {
+        return "أنا شايف الكود! 💻 حط لي المشكلة اللي واجهة بالضبط وأنا نساعدك!";
       }
-      drafts.forEach(d => {
-        const item = document.createElement('div');
-        item.className = 'draft-item';
-        const left = document.createElement('div');
-        left.innerHTML = `<div><strong>${escapeHtml(d.title)}</strong></div><div class=\"muted\">${new Date(d.updated).toLocaleString()}</div>`;
-        const actions = document.createElement('div');
-        actions.style.display = 'flex';
-        actions.style.gap = '6px';
-        const openBtn = document.createElement('button');
-        openBtn.className = 'btn ghost';
-        openBtn.innerText = 'فتح';
-        openBtn.addEventListener('click', () => { titleEl.value = d.title; contentEl.value = d.content; autosaveStatus.innerText = 'تمّ الفتح'; setTimeout(()=>autosaveStatus.innerText='—',1200); window.scrollTo({top:0, behavior:'smooth'}); });
-        const dlBtn = document.createElement('button');
-        dlBtn.className = 'btn';
-        dlBtn.innerText = 'تحميل';
-        dlBtn.addEventListener('click', () => downloadText(d.title, d.content));
-        const pubBtn = document.createElement('button');
-        pubBtn.className = 'btn';
-        pubBtn.innerText = 'نشر';
-        pubBtn.addEventListener('click', () => openPublishModal(d));
-        const delBtn = document.createElement('button');
-        delBtn.className = 'btn ghost';
-        delBtn.innerText = 'حذف';
-        delBtn.addEventListener('click', () => { deleteDraft(d.id); });
-        actions.appendChild(openBtn);
-        actions.appendChild(dlBtn);
-        actions.appendChild(pubBtn);
-        actions.appendChild(delBtn);
-        item.appendChild(left);
-        item.appendChild(actions);
-        draftsList.appendChild(item);
-      });
+
+      // Random encouragement
+      const encouragements = [
+        "هذا سؤال حلو! 🤔 فكرة كويسة - واصل!",
+        "👍 راني شايف وجهة نظرك!",
+        "مشكل حقيقي! 💚 نجم نشتغل عليه!",
+        "ممتاز! 🎯 شنوّ التفاصيل الكاملة?",
+        "لله الحمد على الأفكار! 📝 زيد قول لي شي حاجة?"
+      ];
+      return encouragements[Math.floor(Math.random() * encouragements.length)];
     }
 
-    function deleteDraft(id) {
-      let drafts = loadDrafts();
-      drafts = drafts.filter(d => d.id !== id);
-      localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
-      renderDrafts();
-    }
-
-    function downloadText(title, content) {
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = (title || 'untitled') + '.txt';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }
-
-    saveBtn.addEventListener('click', () => {
-      saveDraft(titleEl.value.trim(), contentEl.value);
+    // Event listeners
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
     });
 
-    downloadBtn.addEventListener('click', () => {
-      downloadText(titleEl.value || 'untitled', contentEl.value || '');
+    clearBtn.addEventListener('click', () => {
+      chatMessages.innerHTML = '';
+      statusText.innerText = 'CLEARED';
+      setTimeout(() => { statusText.innerText = 'READY'; }, 1000);
+      messageInput.focus();
     });
 
-    // Autosave every 5 seconds if content changed
-    let lastSaved = '';
-    setInterval(() => {
-      const cur = contentEl.value;
-      if (cur && cur !== lastSaved) {
-        localStorage.setItem('louay_autosave', JSON.stringify({ title: titleEl.value || '', content: cur, updated: new Date().toISOString() }));
-        autosaveStatus.innerText = 'حفظ تلقائي';
-        setTimeout(()=>{ autosaveStatus.innerText = '—'; },900);
-        lastSaved = cur;
-      }
-    }, 5000);
-
-    // load autosave on start
+    // Welcome message
     window.addEventListener('load', () => {
-      renderDrafts();
-      const auto = localStorage.getItem('louay_autosave');
-      if (auto) {
-        try {
-          const obj = JSON.parse(auto);
-          if (obj && obj.content) {
-            contentEl.value = obj.content;
-            titleEl.value = obj.title || '';
-            autosaveStatus.innerText = 'تمّت استرجاع المسودة التلقائية';
-            setTimeout(()=>autosaveStatus.innerText='—',1500);
-          }
-        } catch (e) { /* ignore */ }
-      }
+      addMessage("السلام عليكم! 👋 أنا بوت ذكي أخضر! اكتب أي سؤال أو كود وأنا نرد عليك في الحال. شنوّ اللي بديك?", 'bot');
+      messageInput.focus();
     });
-
-    // Utilities
-    function escapeHtml(text){
-      return (text+'').replace(/[&<>\"']/g, function(c){
-        return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c];
-      });
-    }
-
-    // Title suggestion logic
-    function generateTitleFromContent(content) {
-      if (!content) return '';
-      // Split into lines and find first non-empty line
-      const lines = content.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-      let candidate = '';
-      if (lines.length) {
-        // prefer the first line if it's short
-        if (lines[0].length <= 80) candidate = lines[0];
-        else {
-          // take first sentence up to 80 chars
-          const m = lines.join(' ').match(/^(.*?[\.\?!\n])/);
-          candidate = m ? m[0].trim() : lines[0].slice(0,80).trim();
-        }
-      } else {
-        // fallback: take first 6 words
-        const words = content.split(/\s+/).filter(Boolean);
-        candidate = words.slice(0,6).join(' ');
-      }
-
-      // Clean candidate: remove markdown headings and leading hashes
-      candidate = candidate.replace(/^#+\s*/, '').replace(/\s+/g, ' ').trim();
-      // limit length
-      if (candidate.length > 80) candidate = candidate.slice(0,77) + '...';
-      return candidate;
-    }
-
-    suggestTitleBtn.addEventListener('click', () => {
-      const suggested = generateTitleFromContent(contentEl.value);
-      if (suggested) {
-        titleEl.value = suggested;
-        autosaveStatus.innerText = 'عنوان مقترح';
-        setTimeout(()=>autosaveStatus.innerText='—',1200);
-      } else {
-        autosaveStatus.innerText = 'ما ثمّش محتوى باش نعمل عنوان';
-        setTimeout(()=>autosaveStatus.innerText='—',1200);
-      }
-    });
-
-    // publish modal logic
-    const publishToggle = document.getElementById('publishToggle');
-    const publishModal = document.getElementById('publishModal');
-    const closeModal = document.getElementById('closeModal');
-    const publishNow = document.getElementById('publishNow');
-    const patInput = document.getElementById('patInput');
-    const rememberToken = document.getElementById('rememberToken');
-    const publishStatus = document.getElementById('publishStatus');
-
-    publishToggle.addEventListener('click', () => openPublishModal());
-    closeModal.addEventListener('click', () => { publishModal.style.display = 'none'; });
-
-    function openPublishModal(draft) {
-      publishModal.style.display = 'flex';
-      // if draft provided, prefill
-      if (draft) {
-        titleEl.value = draft.title;
-        contentEl.value = draft.content;
-      }
-      // load token from localStorage if exists
-      const saved = localStorage.getItem('louay_pat');
-      if (saved) { patInput.value = saved; rememberToken.checked = true; }
-    }
-
-    // slug helper
-    function slugify(text) {
-      return (text || 'untitled').toString().toLowerCase().trim()
-        .replace(/[^\w\-\s -\uFFFF]+/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/\-+/g, '-');
-    }
-
-    async function publishCurrentDraft(pat) {
-      let title = titleEl.value.trim();
-      const content = contentEl.value || '';
-      if (!pat) { publishStatus.innerText = 'حطّ PAT باش نجم ننشر'; return; }
-
-      // if title empty, auto-generate
-      if (!title) {
-        const suggested = generateTitleFromContent(content);
-        if (suggested) {
-          title = suggested;
-          titleEl.value = title; // populate
-        } else {
-          title = 'untitled';
-          titleEl.value = title;
-        }
-      }
-
-      publishStatus.innerText = 'راني نخدم...';
-
-      try {
-        const branch = 'autopub/' + Date.now() + '-' + slugify(title);
-        // get main sha
-        const refRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/ref/heads/main`, { headers: { Authorization: 'token ' + pat } });
-        if (!refRes.ok) throw new Error('ما نجمتش نجيب الرف متاع main: ' + refRes.status);
-        const refData = await refRes.json();
-        const mainSha = refData.object.sha;
-
-        // create new branch
-        const createRefRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/refs`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: 'token ' + pat },
-          body: JSON.stringify({ ref: 'refs/heads/' + branch, sha: mainSha })
-        });
-        if (!createRefRes.ok && createRefRes.status !== 422) { // 422 if branch exists
-          const errText = await createRefRes.text();
-          throw new Error('ما نجمتش نخلق برانش: ' + createRefRes.status + ' ' + errText);
-        }
-
-        // create file on that branch
-        const path = `posts/${slugify(title)}.md`;
-        const fileContent = `# ${title}\n\n${content}\n`;
-        const putRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(path)}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', Authorization: 'token ' + pat },
-          body: JSON.stringify({ message: `chore(publish): add ${path}`, content: btoa(unescape(encodeURIComponent(fileContent))), branch })
-        });
-        if (!putRes.ok) {
-          const err = await putRes.text();
-          throw new Error('ما نجمتش نعمل commit للملف: ' + putRes.status + ' ' + err);
-        }
-
-        // open PR
-        const prRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/pulls`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: 'token ' + pat },
-          body: JSON.stringify({ title: `chore: publish ${title}`, head: branch, base: 'main', body: `نشر تلقائي من المحرّر: ${title}` })
-        });
-        if (!prRes.ok) {
-          const err = await prRes.text();
-          throw new Error('ما نجمتش نفتح PR: ' + prRes.status + ' ' + err);
-        }
-        const prData = await prRes.json();
-        publishStatus.innerHTML = `تمّ النشر — <a href="${prData.html_url}" target="_blank">شوف الPR</a>`;
-        // remember token if asked
-        if (rememberToken.checked) localStorage.setItem('louay_pat', pat);
-      } catch (e) {
-        console.error(e);
-        publishStatus.innerText = 'غلط: ' + (e.message || e);
-      }
-    }
-
-    publishNow.addEventListener('click', () => {
-      const pat = patInput.value.trim();
-      publishCurrentDraft(pat);
-    });
-
-    // show/hide UI helpers
-    showTerminalBtn.addEventListener('click', () => {
-      document.getElementById('login-panel').scrollIntoView({ behavior: 'smooth' });
-    });
-    openEditorBtn.addEventListener('click', () => {
-      document.querySelector('.editor').scrollIntoView({ behavior: 'smooth' });
-      contentEl.focus();
-    });
-
   </script>
 </body>
 </html>
