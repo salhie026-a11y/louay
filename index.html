@@ -10,7 +10,6 @@
       --bg-color: #050000;
       --panel-bg: rgba(0, 20, 0, 0.85);
       --muted: #666;
-      --dark-green: #003300;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
     body {
@@ -25,6 +24,89 @@
 
     .bg-grid { position: fixed; inset: 0; background: radial-gradient(circle, rgba(0,255,0,0.08) 0%, rgba(0,0,0,0.95) 100%); z-index: -1; }
 
+    /* LOGIN SCREEN */
+    #loginScreen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+      z-index: 100;
+    }
+
+    #loginScreen.hidden {
+      display: none;
+    }
+
+    .login-box {
+      background: var(--panel-bg);
+      border: 2px solid var(--main-color);
+      padding: 40px;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+    }
+
+    .login-box h2 {
+      font-size: 20px;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+
+    .login-box p {
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      background: #000;
+      border: 1px solid var(--main-color);
+      color: var(--main-color);
+      font-size: 16px;
+      text-align: center;
+      letter-spacing: 3px;
+      border-radius: 4px;
+    }
+
+    .login-box input:focus {
+      outline: none;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    }
+
+    .login-box button {
+      width: 100%;
+      padding: 12px;
+      background: var(--main-color);
+      color: #000;
+      border: none;
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: opacity 0.2s;
+    }
+
+    .login-box button:hover {
+      opacity: 0.8;
+    }
+
+    .error {
+      color: #ff6666;
+      font-size: 12px;
+      display: none;
+    }
+
+    .error.show {
+      display: block;
+    }
+
+    /* CHAT SCREEN */
     header {
       padding: 12px 16px;
       border-bottom: 2px solid var(--main-color);
@@ -43,13 +125,11 @@
 
     main { display: flex; flex-direction: column; gap: 0; padding: 0; flex: 1; overflow: hidden; }
 
-    /* Chat container */
     .chat-container {
       flex: 1;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      border-bottom: 1px solid var(--main-color);
     }
 
     .chat-messages {
@@ -108,7 +188,7 @@
       border-radius: 6px;
       word-wrap: break-word;
       font-size: 14px;
-      line-height: 1.5;
+      line-height: 1.6;
     }
 
     .message.user .message-bubble {
@@ -123,11 +203,6 @@
       color: var(--main-color);
     }
 
-    .message.bot .message-bubble strong {
-      color: #00ff00;
-    }
-
-    /* Input area */
     .chat-input-area {
       padding: 12px 16px;
       background: var(--panel-bg);
@@ -147,6 +222,7 @@
       font-size: 14px;
       resize: none;
       max-height: 100px;
+      font-family: 'Courier New', Courier, monospace;
     }
 
     #messageInput::placeholder {
@@ -160,7 +236,6 @@
 
     .send-btn {
       padding: 10px 16px;
-      align-self: center;
     }
 
     .status-bar { 
@@ -176,12 +251,12 @@
     .typing-indicator {
       display: flex;
       gap: 4px;
-      padding: 10px;
+      padding: 5px 0;
     }
 
     .typing-indicator span {
-      width: 8px;
-      height: 8px;
+      width: 6px;
+      height: 6px;
       background: var(--main-color);
       border-radius: 50%;
       animation: typing 1.4s infinite;
@@ -202,9 +277,6 @@
 
     footer { padding:8px 16px; font-size:11px; color:var(--muted); }
 
-    :focus { outline: 2px solid rgba(0, 255, 0, 0.3); outline-offset: 2px; }
-
-    /* Scrollbar styling */
     .chat-messages::-webkit-scrollbar {
       width: 8px;
     }
@@ -221,71 +293,106 @@
     .chat-messages::-webkit-scrollbar-thumb:hover {
       background: rgba(0, 255, 0, 0.5);
     }
-
-    .brand {
-      color: #00ff00;
-      font-weight: bold;
-      letter-spacing: 1px;
-    }
   </style>
 </head>
 <body>
   <div class="bg-grid" aria-hidden="true"></div>
 
-  <header role="banner">
-    <h1><span class="brand">ONLY</span> Louay 💚</h1>
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen">
+    <div class="login-box">
+      <h2>🔐 ONLY Louay</h2>
+      <p>حط الكود بتاعك باش تدخل للشات</p>
+      <input type="password" id="codeInput" placeholder="الكود..." maxlength="5" inputmode="numeric" />
+      <button id="loginBtn">دخول</button>
+      <div id="error" class="error">الكود غالط! عاود جرّب 🚫</div>
+    </div>
+  </div>
+
+  <!-- CHAT SCREEN -->
+  <header id="chatHeader" style="display: none;">
+    <h1>💚 ONLY Louay</h1>
     <nav>
-      <button id="clearChat" class="btn ghost">مسح</button>
+      <button id="logoutBtn" class="btn ghost">خروج</button>
     </nav>
   </header>
 
-  <main>
+  <main id="chatMain" style="display: none;">
     <section class="chat-container">
-      <div class="chat-messages" id="chatMessages" role="log" aria-live="polite" aria-label="نقاش الدردشة"></div>
+      <div class="chat-messages" id="chatMessages"></div>
     </section>
   </main>
 
-  <div class="chat-input-area">
-    <textarea id="messageInput" placeholder="حكي مع لؤاي..." aria-label="حقل الإدخال" rows="1"></textarea>
-    <button id="sendBtn" class="btn send-btn">أرسل ➤</button>
+  <div id="chatInputArea" class="chat-input-area" style="display: none;">
+    <textarea id="messageInput" placeholder="اكتب ما تبي..." rows="1"></textarea>
+    <button id="sendBtn" class="btn send-btn">أرسل</button>
   </div>
 
-  <div class="status-bar" role="contentinfo">
-    <span>STATUS: <span id="status-text" aria-live="polite">READY</span></span>
+  <div id="statusBar" class="status-bar" style="display: none;">
+    <span>STATUS: <span id="status-text">READY</span></span>
     <span>LOUAY-AI: ONLINE</span>
   </div>
 
-  <footer>بوت لؤاي الذكي 💚 — اكتب أي حاجة وأنا نرد عليك!</footer>
+  <footer id="footerEl" style="display: none;">بوت لؤاي الذكي 💚 — حكي معه طبيعي!</footer>
 
   <script>
-    // AI responses - لؤاي
-    const responses = {
-      louay: "أنا هنا! 💚 شنوّ اللي تحتاج يا صديقي?",
-      "only louay": "أيوه! أنا لؤاي الوحيد في هون! 🎯 شنوّ اللي بديك?",
-      hello: "السلام عليكم! 👋 كي��ك أنت يا لؤاي?",
-      hi: "مرحبا! 😊 شنوّ أخبارك يا عزيز?",
-      code: "عندك كود؟ 💻 نجم نقرا فيه وننشري لك التصحيح!",
-      help: "بنّاء عليك شنوّ اللي تحتاج؟\n- اكتب أي سؤال\n- شارك مشكلة\n- اسأل عن البرمجة",
-      javascript: "JavaScript؟ 🎯 لغة الويب! فاهم فيها بزاف!",
-      python: "Python؟ 🐍 لغة قوية! قول لي اللي عايزه!",
-      html: "HTML؟ 🏗️ بناء الصفحات! شنوّ المشكلة?",
-      css: "CSS؟ 🎨 تنسيق وألوان! أنا فاهم الأنماط!",
-      bug: "وقعت في باگ؟ 🐛 حط لي الكود والرسالة وأنا نقول لك الحل!",
-      error: "في خطأ؟ 🔴 لا تقلق! اشرح لي والباقي عليّ!",
-      thanks: "العفو! 😊 أنا هنا دايما باش نساعدك!",
-      bye: "مع السلامة يا صديقي! 👋 باش تحتاج شي حاجة أخرى?",
-      love: "شكراً على الحب! 💚 أنا كذلك أحبك يا لؤاي!",
-      nice: "شكراً! 😊 أنت نسيم زعمة!",
-      project: "عندك بروجيكت؟ 🚀 قول لي التفاصيل وأنا نساعدك!",
-      design: "التصميم؟ 🎨 أنا فاهم الألوان والأشكال والواجهات!",
-      default: "حاصل بالضبط! 💚 قول لي الحاجة بالضبط وأنا نفهمك أحسن!"
-    };
-
+    const CORRECT_CODE = "55541";
+    const loginScreen = document.getElementById('loginScreen');
+    const codeInput = document.getElementById('codeInput');
+    const loginBtn = document.getElementById('loginBtn');
+    const errorMsg = document.getElementById('error');
+    
+    const chatHeader = document.getElementById('chatHeader');
+    const chatMain = document.getElementById('chatMain');
+    const chatInputArea = document.getElementById('chatInputArea');
+    const statusBar = document.getElementById('statusBar');
+    const footerEl = document.getElementById('footerEl');
+    
     const chatMessages = document.getElementById('chatMessages');
     const messageInput = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
-    const clearBtn = document.getElementById('clearChat');
+    const logoutBtn = document.getElementById('logoutBtn');
     const statusText = document.getElementById('status-text');
+
+    // Login logic
+    loginBtn.addEventListener('click', checkCode);
+    codeInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') checkCode();
+    });
+
+    function checkCode() {
+      const code = codeInput.value.trim();
+      if (code === CORRECT_CODE) {
+        loginScreen.classList.add('hidden');
+        chatHeader.style.display = 'flex';
+        chatMain.style.display = 'flex';
+        chatInputArea.style.display = 'flex';
+        statusBar.style.display = 'flex';
+        footerEl.style.display = 'block';
+        errorMsg.classList.remove('show');
+        messageInput.focus();
+        // Welcome message
+        setTimeout(() => {
+          addMessage('السلام عليكم يا لؤاي! 👋 أنا هنا بتاعك. شنوّ أخبارك؟ حكي معي بشكل طبيعي!', 'bot');
+        }, 300);
+      } else {
+        errorMsg.classList.add('show');
+        codeInput.value = '';
+      }
+    }
+
+    // Logout logic
+    logoutBtn.addEventListener('click', () => {
+      loginScreen.classList.remove('hidden');
+      chatHeader.style.display = 'none';
+      chatMain.style.display = 'none';
+      chatInputArea.style.display = 'none';
+      statusBar.style.display = 'none';
+      footerEl.style.display = 'none';
+      codeInput.value = '';
+      chatMessages.innerHTML = '';
+      errorMsg.classList.remove('show');
+    });
 
     // Auto-resize textarea
     messageInput.addEventListener('input', function() {
@@ -298,24 +405,20 @@
       const text = messageInput.value.trim();
       if (!text) return;
 
-      // Add user message
       addMessage(text, 'user');
       messageInput.value = '';
       messageInput.style.height = 'auto';
 
-      // Bot typing indicator
       showTypingIndicator();
       statusText.innerText = 'THINKING...';
 
-      // Simulate processing delay
       setTimeout(() => {
         const response = generateResponse(text);
         removeTypingIndicator();
         addMessage(response, 'bot');
         statusText.innerText = 'READY';
-        // Auto scroll
         chatMessages.scrollTop = chatMessages.scrollHeight;
-      }, 600 + Math.random() * 600);
+      }, 500 + Math.random() * 800);
     }
 
     function addMessage(text, sender) {
@@ -328,7 +431,7 @@
 
       const bubble = document.createElement('div');
       bubble.className = 'message-bubble';
-      bubble.innerHTML = text;
+      bubble.textContent = text;
 
       messageDiv.appendChild(avatar);
       messageDiv.appendChild(bubble);
@@ -351,6 +454,7 @@
       messageDiv.appendChild(avatar);
       messageDiv.appendChild(typing);
       chatMessages.appendChild(messageDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     function removeTypingIndicator() {
@@ -358,33 +462,62 @@
       if (indicator) indicator.remove();
     }
 
+    // Intelligent response generator
     function generateResponse(userText) {
-      const lower = userText.toLowerCase();
+      const text = userText.toLowerCase().trim();
 
-      // Search for keywords
-      for (const [key, response] of Object.entries(responses)) {
-        if (lower.includes(key)) {
-          return response;
-        }
+      // Greetings
+      if (/^(سلام|السلام عليكم|مرحبا|هلا|هلو|السلام|Hi|Hello)/.test(text)) {
+        return 'السلام عليكم! 👋 كيفك انت؟ شنوّ أخبارك يا لؤاي؟';
       }
 
-      // If it looks like code, give code response
-      if (lower.includes('{') || lower.includes('[') || lower.includes('function') || lower.includes('const')) {
-        return "أنا شايف الكود! 💻 حط لي المشكلة اللي واجهة وأنا نساعدك!";
+      // Thanks
+      if (/شكرا|تشكر|مشكور|ميرسي|شكر/.test(text)) {
+        return 'العفو يا صديقي! 😊 أنا هنا دايما باش نساعدك!';
       }
 
-      // Random encouragement from Louay
-      const encouragements = [
-        "يا لؤاي! هذا سؤال حلو! 🤔 واصل!",
-        "👍 راني شايف وجهة نظرك يا صديقي!",
-        "مشكل حقيقي يا لؤاي! 💚 نجم نشتغل عليه!",
-        "ممتاز يا عزيز! 🎯 شنوّ التفاصيل الكاملة?",
-        "لله الحمد على الأفكار! 📝 زيد قول لي شي حاجة?",
-        "أنت فاهم يا لؤاي! 💡 هذا ذكي!",
-        "راني معاك يا صديقي! 🤝 خدينا الحل!",
-        "أحسن فكرة شفتها اليوم! 🌟 قول لي الباقي!"
+      // Bye
+      if (/^(مع السلامة|باي|باي بو|وداعا|خلاص|تمام)/.test(text)) {
+        return 'مع السلامة يا لؤاي! 👋 باش حتاج شي حاجة عاود حكي معي!';
+      }
+
+      // How are you
+      if (/شنوّ أخبارك|كيفك|كيفاش|وين الراح/.test(text)) {
+        return 'الحمد لله تمام! 💚 أنا جاهز وفايق! وانت شنوّ أخبارك؟';
+      }
+
+      // Love/Nice
+      if (/تحب|حب يك|كايح|حلو|ممتاز/.test(text)) {
+        return 'شكراً يا لؤاي! 💚 أنت كذلك حلو وذكي! نتشتغلو معا بشكل حلو!';
+      }
+
+      // Name related
+      if (/لؤاي|louay|only/.test(text)) {
+        return 'أيوه! أنا هنا للؤاي! 💚 أنت الوحيد اللي أتكلم معاه!';
+      }
+
+      // Programming questions
+      if (/كود|برمج|جافا|بايثون|html|css|function|variable/.test(text)) {
+        return 'أنا فاهم في البرمجة بزاف! 💻 قول لي شنوّ المشكلة اللي واجهة وأنا نساعدك!';
+      }
+
+      // Need help
+      if (/ساعدني|ساعد|حاجة|مشكلة|مساعدة/.test(text)) {
+        return 'تمام! 💚 حط لي التفاصيل والمشكلة بالضبط وأنا نحاول نحلها معاك!';
+      }
+
+      // Default friendly response
+      const responses = [
+        'فاهم ما تقول! 👍 قول لي أكتر!',
+        'هاك فكرة حلوة يا لؤاي! 💡 واصل!',
+        'راني معاك! 🤝 شنوّ الباقي؟',
+        'أحسن سؤال! 🎯 اشرح لي أكتر تاني!',
+        'ممتاز! 😊 وشنوّ بعديها؟',
+        'أنا فاهمك تمام! ✨ وبعديها؟',
+        'كويس! 💚 تقدر تقول لي أكتر عن هاك؟',
+        'يالا! شنوّ الخطوة التانية؟'
       ];
-      return encouragements[Math.floor(Math.random() * encouragements.length)];
+      return responses[Math.floor(Math.random() * responses.length)];
     }
 
     // Event listeners
@@ -394,19 +527,6 @@
         e.preventDefault();
         sendMessage();
       }
-    });
-
-    clearBtn.addEventListener('click', () => {
-      chatMessages.innerHTML = '';
-      statusText.innerText = 'CLEARED';
-      setTimeout(() => { statusText.innerText = 'READY'; }, 1000);
-      messageInput.focus();
-    });
-
-    // Welcome message - Louay's welcome
-    window.addEventListener('load', () => {
-      addMessage("السلام عليكم يا لؤاي! 💚 أنا بوتك الخاص 'ONLY Louay'. اكتب أي كود أو سؤال أو حاجة عادية وأنا نرد عليك في الحال! شنوّ اللي بديك يا صديقي?", 'bot');
-      messageInput.focus();
     });
   </script>
 </body>
