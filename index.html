@@ -124,6 +124,7 @@
     <section class="editor panel">
       <div class="controls">
         <input type="text" id="title" placeholder="عنوان الكتابة" aria-label="عنوان" />
+        <button id="suggestTitleBtn" class="btn ghost">اقترح عنوان</button>
         <button id="saveBtn" class="btn">حفظ مسودة</button>
         <button id="downloadBtn" class="btn ghost">تحميل</button>
       </div>
@@ -231,6 +232,7 @@
     const DRAFTS_KEY = 'louay_drafts_v1';
     const titleEl = document.getElementById('title');
     const contentEl = document.getElementById('content');
+    const suggestTitleBtn = document.getElementById('suggestTitleBtn');
     const saveBtn = document.getElementById('saveBtn');
     const downloadBtn = document.getElementById('downloadBtn');
     const draftsList = document.getElementById('draftsList');
@@ -360,6 +362,45 @@
       });
     }
 
+    // Title suggestion logic
+    function generateTitleFromContent(content) {
+      if (!content) return '';
+      // Split into lines and find first non-empty line
+      const lines = content.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      let candidate = '';
+      if (lines.length) {
+        // prefer the first line if it's short
+        if (lines[0].length <= 80) candidate = lines[0];
+        else {
+          // take first sentence up to 80 chars
+          const m = lines.join(' ').match(/^(.*?[\.\?!\n])/);
+          candidate = m ? m[0].trim() : lines[0].slice(0,80).trim();
+        }
+      } else {
+        // fallback: take first 6 words
+        const words = content.split(/\s+/).filter(Boolean);
+        candidate = words.slice(0,6).join(' ');
+      }
+
+      // Clean candidate: remove markdown headings and leading hashes
+      candidate = candidate.replace(/^#+\s*/, '').replace(/\s+/g, ' ').trim();
+      // limit length
+      if (candidate.length > 80) candidate = candidate.slice(0,77) + '...';
+      return candidate;
+    }
+
+    suggestTitleBtn.addEventListener('click', () => {
+      const suggested = generateTitleFromContent(contentEl.value);
+      if (suggested) {
+        titleEl.value = suggested;
+        autosaveStatus.innerText = 'عنوان مقترح';
+        setTimeout(()=>autosaveStatus.innerText='—',1200);
+      } else {
+        autosaveStatus.innerText = 'ما ثمّش محتوى باش نعمل عنوان';
+        setTimeout(()=>autosaveStatus.innerText='—',1200);
+      }
+    });
+
     // publish modal logic
     const publishToggle = document.getElementById('publishToggle');
     const publishModal = document.getElementById('publishModal');
@@ -387,15 +428,28 @@
     // slug helper
     function slugify(text) {
       return (text || 'untitled').toString().toLowerCase().trim()
-        .replace(/[^\w\-\s]+/g, '')
+        .replace(/[^\w\-\s -\uFFFF]+/g, '')
         .replace(/\s+/g, '-')
         .replace(/\-+/g, '-');
     }
 
     async function publishCurrentDraft(pat) {
-      const title = titleEl.value || 'untitled';
+      let title = titleEl.value.trim();
       const content = contentEl.value || '';
       if (!pat) { publishStatus.innerText = 'حطّ PAT باش نجم ننشر'; return; }
+
+      // if title empty, auto-generate
+      if (!title) {
+        const suggested = generateTitleFromContent(content);
+        if (suggested) {
+          title = suggested;
+          titleEl.value = title; // populate
+        } else {
+          title = 'untitled';
+          titleEl.value = title;
+        }
+      }
+
       publishStatus.innerText = 'راني نخدم...';
 
       try {
