@@ -74,6 +74,10 @@
 
     footer { padding:8px 16px; font-size:12px; color:var(--muted); }
 
+    /* modal */
+    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); z-index: 40; }
+    .modal .panel { max-width: 520px; width: 100%; }
+
     /* focus */
     :focus { outline: 3px solid rgba(255,0,51,0.25); outline-offset:3px; }
 
@@ -87,6 +91,7 @@
     <nav>
       <button id="open-editor" class="btn">محرّر</button>
       <button id="show-terminal" class="btn ghost">التيرمينال</button>
+      <button id="publishToggle" class="btn">نشر (أوتوماتيكي)</button>
     </nav>
   </header>
 
@@ -137,10 +142,32 @@
     <span>DEVICE: MOBILE_NODE</span>
   </div>
 
-  <footer>التخزين محلي — المسودات محفوظة في المتصفح. لإرسالها للـ GitHub يلزم Token، نعاونك بعدين لو تحب.</footer>
+  <footer>التخزين محلي — المسودات محفوظة في المتصفح. لإرسالها للـ GitHub يلزم Token. الموقع جاهز للنشر عبر GitHub Pages بعد تفعيل Pages في Settings أو عبر Action (انظر التعليمات).</footer>
+
+  <!-- Publish modal -->
+  <div id="publishModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="publishTitle">
+    <div class="panel">
+      <h3 id="publishTitle">نشر المسودة على GitHub (فرع + PR)</h3>
+      <p class="muted">العمليات هاذي تعمل مباشرة في الحساب متاعك عبر GitHub API. ما ننجمش نشوف التوكن متاعك — التوكن يُخزّن في المتصفح فقط إذا اخترت "تذكّر التوكن".</p>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+        <label>Personal Access Token (PAT) — يلزموه scope: <code>repo</code> أو <code>public_repo</code> إذا الريبو عام</label>
+        <input id="patInput" type="password" placeholder="ghp_..." style="padding:8px; background:#000; border:1px solid var(--main-color); color:var(--main-color);" />
+        <label><input type="checkbox" id="rememberToken" /> تذكّر التوكن في هذا المتصفح</label>
+        <div style="display:flex; gap:8px;">
+          <button id="publishNow" class="btn">نشر الآن</button>
+          <button id="closeModal" class="btn ghost">إلغاء</button>
+        </div>
+        <div id="publishStatus" class="muted">—</div>
+      </div>
+    </div>
+  </div>
 
   <script>
-    // Existing terminal/login logic
+    // Repo info
+    const OWNER = 'salhie026-a11y';
+    const REPO = 'louay';
+
+    // Terminal/login logic
     const CORRECT_CODE = "55541";
     const logs = [
       "[SYSTEM] الوصول مقبول. مرحبا بيك قائد.",
@@ -252,12 +279,17 @@
         dlBtn.className = 'btn';
         dlBtn.innerText = 'تحميل';
         dlBtn.addEventListener('click', () => downloadText(d.title, d.content));
+        const pubBtn = document.createElement('button');
+        pubBtn.className = 'btn';
+        pubBtn.innerText = 'نشر';
+        pubBtn.addEventListener('click', () => openPublishModal(d));
         const delBtn = document.createElement('button');
         delBtn.className = 'btn ghost';
         delBtn.innerText = 'حذف';
         delBtn.addEventListener('click', () => { deleteDraft(d.id); });
         actions.appendChild(openBtn);
         actions.appendChild(dlBtn);
+        actions.appendChild(pubBtn);
         actions.appendChild(delBtn);
         item.appendChild(left);
         item.appendChild(actions);
@@ -297,7 +329,6 @@
     setInterval(() => {
       const cur = contentEl.value;
       if (cur && cur !== lastSaved) {
-        // store temporary draft (not added to drafts list)
         localStorage.setItem('louay_autosave', JSON.stringify({ title: titleEl.value || '', content: cur, updated: new Date().toISOString() }));
         autosaveStatus.innerText = 'حفظ تلقائي';
         setTimeout(()=>{ autosaveStatus.innerText = '—'; },900);
@@ -325,9 +356,104 @@
     // Utilities
     function escapeHtml(text){
       return (text+'').replace(/[&<>\"']/g, function(c){
-        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c];
       });
     }
+
+    // publish modal logic
+    const publishToggle = document.getElementById('publishToggle');
+    const publishModal = document.getElementById('publishModal');
+    const closeModal = document.getElementById('closeModal');
+    const publishNow = document.getElementById('publishNow');
+    const patInput = document.getElementById('patInput');
+    const rememberToken = document.getElementById('rememberToken');
+    const publishStatus = document.getElementById('publishStatus');
+
+    publishToggle.addEventListener('click', () => openPublishModal());
+    closeModal.addEventListener('click', () => { publishModal.style.display = 'none'; });
+
+    function openPublishModal(draft) {
+      publishModal.style.display = 'flex';
+      // if draft provided, prefill
+      if (draft) {
+        titleEl.value = draft.title;
+        contentEl.value = draft.content;
+      }
+      // load token from localStorage if exists
+      const saved = localStorage.getItem('louay_pat');
+      if (saved) { patInput.value = saved; rememberToken.checked = true; }
+    }
+
+    // slug helper
+    function slugify(text) {
+      return (text || 'untitled').toString().toLowerCase().trim()
+        .replace(/[^\w\-\s]+/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/\-+/g, '-');
+    }
+
+    async function publishCurrentDraft(pat) {
+      const title = titleEl.value || 'untitled';
+      const content = contentEl.value || '';
+      if (!pat) { publishStatus.innerText = 'حطّ PAT باش نجم ننشر'; return; }
+      publishStatus.innerText = 'راني نخدم...';
+
+      try {
+        const branch = 'autopub/' + Date.now() + '-' + slugify(title);
+        // get main sha
+        const refRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/ref/heads/main`, { headers: { Authorization: 'token ' + pat } });
+        if (!refRes.ok) throw new Error('ما نجمتش نجيب الرف متاع main: ' + refRes.status);
+        const refData = await refRes.json();
+        const mainSha = refData.object.sha;
+
+        // create new branch
+        const createRefRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/refs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'token ' + pat },
+          body: JSON.stringify({ ref: 'refs/heads/' + branch, sha: mainSha })
+        });
+        if (!createRefRes.ok && createRefRes.status !== 422) { // 422 if branch exists
+          const errText = await createRefRes.text();
+          throw new Error('ما نجمتش نخلق برانش: ' + createRefRes.status + ' ' + errText);
+        }
+
+        // create file on that branch
+        const path = `posts/${slugify(title)}.md`;
+        const fileContent = `# ${title}\n\n${content}\n`;
+        const putRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(path)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: 'token ' + pat },
+          body: JSON.stringify({ message: `chore(publish): add ${path}`, content: btoa(unescape(encodeURIComponent(fileContent))), branch })
+        });
+        if (!putRes.ok) {
+          const err = await putRes.text();
+          throw new Error('ما نجمتش نعمل commit للملف: ' + putRes.status + ' ' + err);
+        }
+
+        // open PR
+        const prRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/pulls`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'token ' + pat },
+          body: JSON.stringify({ title: `chore: publish ${title}`, head: branch, base: 'main', body: `نشر تلقائي من المحرّر: ${title}` })
+        });
+        if (!prRes.ok) {
+          const err = await prRes.text();
+          throw new Error('ما نجمتش نفتح PR: ' + prRes.status + ' ' + err);
+        }
+        const prData = await prRes.json();
+        publishStatus.innerHTML = `تمّ النشر — <a href="${prData.html_url}" target="_blank">شوف الPR</a>`;
+        // remember token if asked
+        if (rememberToken.checked) localStorage.setItem('louay_pat', pat);
+      } catch (e) {
+        console.error(e);
+        publishStatus.innerText = 'غلط: ' + (e.message || e);
+      }
+    }
+
+    publishNow.addEventListener('click', () => {
+      const pat = patInput.value.trim();
+      publishCurrentDraft(pat);
+    });
 
     // show/hide UI helpers
     showTerminalBtn.addEventListener('click', () => {
