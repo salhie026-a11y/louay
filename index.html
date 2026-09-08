@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>شات بوت ذكي — محرّر</title>
+  <title>ONLY Louay — شات بوت ذكي</title>
   <style>
     :root {
       --main-color: #00ff00;
@@ -89,6 +89,7 @@
       justify-content: center;
       font-weight: bold;
       flex-shrink: 0;
+      font-size: 16px;
     }
 
     .message.user .message-avatar {
@@ -220,13 +221,19 @@
     .chat-messages::-webkit-scrollbar-thumb:hover {
       background: rgba(0, 255, 0, 0.5);
     }
+
+    .brand {
+      color: #00ff00;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
   </style>
 </head>
 <body>
   <div class="bg-grid" aria-hidden="true"></div>
 
   <header role="banner">
-    <h1>🤖 BOT-CHAT — بوت ذكي أخضر</h1>
+    <h1><span class="brand">ONLY</span> Louay 💚</h1>
     <nav>
       <button id="clearChat" class="btn ghost">مسح</button>
     </nav>
@@ -239,33 +246,39 @@
   </main>
 
   <div class="chat-input-area">
-    <textarea id="messageInput" placeholder="اكتب كود أو سؤال الآن..." aria-label="حقل الإدخال" rows="1"></textarea>
+    <textarea id="messageInput" placeholder="حكي مع لؤاي..." aria-label="حقل الإدخال" rows="1"></textarea>
     <button id="sendBtn" class="btn send-btn">أرسل ➤</button>
   </div>
 
   <div class="status-bar" role="contentinfo">
     <span>STATUS: <span id="status-text" aria-live="polite">READY</span></span>
-    <span>MODE: AI-CHAT</span>
+    <span>LOUAY-AI: ONLINE</span>
   </div>
 
-  <footer>بوت ذكي يرد عليك في الحال. اكتب أي سؤال أو كود!</footer>
+  <footer>بوت لؤاي الذكي 💚 — اكتب أي حاجة وأنا نرد عليك!</footer>
 
   <script>
-    // AI responses - نسخة محسنة مع ذكاء بسيط
+    // AI responses - لؤاي
     const responses = {
-      hello: "السلام عليكم! 👋 كيفك أنت؟ أنا بوت أخضر جاهز باش نساعدك!",
-      hi: "مرحبا! 😊 شنوّ أخبارك؟ شنوّ اللي باش نساعدك فيه?",
+      louay: "أنا هنا! 💚 شنوّ اللي تحتاج يا صديقي?",
+      "only louay": "أيوه! أنا لؤاي الوحيد في هون! 🎯 شنوّ اللي بديك?",
+      hello: "السلام عليكم! 👋 كي��ك أنت يا لؤاي?",
+      hi: "مرحبا! 😊 شنوّ أخبارك يا عزيز?",
       code: "عندك كود؟ 💻 نجم نقرا فيه وننشري لك التصحيح!",
-      help: "بنّاء عليك شنوّ اللي تحتاج؟\n- اكتب أي سؤال عام\n- شارك كود تحتاج تصحيحه\n- اسأل عن البرمجة",
-      javascript: "JavaScript؟ 🎯 لغة ديالة الويب زعمة! أنا فاهم فيها كويس. شنوّ المشكلة?",
-      python: "Python؟ 🐍 لغة قوية! اكتب الكود وأنا نحاول نساعدك فيه.",
-      html: "HTML؟ 🏗️ زعمة بناء الصفحات! تحتاج حاجة معينة?",
-      css: "CSS؟ 🎨 تنسيق وألوان! أنا فاهم الأنماط والتصاميم.",
-      bug: "وقعت في باگ؟ 🐛 حط لي الكود والرسالة الحمراء وأنا نقول لك الحل!",
-      error: "في خطأ؟ 🔴 لا تقلق، نجم أساعدك! حط لي الرسالة الدقيقة.",
-      thanks: "العفو! 😊 أنا هنا باش ما حتاش شي!",
-      bye: "مع السلامة! 👋 باش تحتاج شي حاجة أخرى ؟",
-      default: "حاصل بالضبط! 💚 قول لي الحاجة بالضبط وأنا نحاول نفهمك أحسن!"
+      help: "بنّاء عليك شنوّ اللي تحتاج؟\n- اكتب أي سؤال\n- شارك مشكلة\n- اسأل عن البرمجة",
+      javascript: "JavaScript؟ 🎯 لغة الويب! فاهم فيها بزاف!",
+      python: "Python؟ 🐍 لغة قوية! قول لي اللي عايزه!",
+      html: "HTML؟ 🏗️ بناء الصفحات! شنوّ المشكلة?",
+      css: "CSS؟ 🎨 تنسيق وألوان! أنا فاهم الأنماط!",
+      bug: "وقعت في باگ؟ 🐛 حط لي الكود والرسالة وأنا نقول لك الحل!",
+      error: "في خطأ؟ 🔴 لا تقلق! اشرح لي والباقي عليّ!",
+      thanks: "العفو! 😊 أنا هنا دايما باش نساعدك!",
+      bye: "مع السلامة يا صديقي! 👋 باش تحتاج شي حاجة أخرى?",
+      love: "شكراً على الحب! 💚 أنا كذلك أحبك يا لؤاي!",
+      nice: "شكراً! 😊 أنت نسيم زعمة!",
+      project: "عندك بروجيكت؟ 🚀 قول لي التفاصيل وأنا نساعدك!",
+      design: "التصميم؟ 🎨 أنا فاهم الألوان والأشكال والواجهات!",
+      default: "حاصل بالضبط! 💚 قول لي الحاجة بالضبط وأنا نفهمك أحسن!"
     };
 
     const chatMessages = document.getElementById('chatMessages');
@@ -302,7 +315,7 @@
         statusText.innerText = 'READY';
         // Auto scroll
         chatMessages.scrollTop = chatMessages.scrollHeight;
-      }, 800 + Math.random() * 700);
+      }, 600 + Math.random() * 600);
     }
 
     function addMessage(text, sender) {
@@ -311,7 +324,7 @@
 
       const avatar = document.createElement('div');
       avatar.className = 'message-avatar';
-      avatar.innerText = sender === 'user' ? 'أنت' : '🤖';
+      avatar.innerText = sender === 'user' ? '👤' : '💚';
 
       const bubble = document.createElement('div');
       bubble.className = 'message-bubble';
@@ -329,7 +342,7 @@
 
       const avatar = document.createElement('div');
       avatar.className = 'message-avatar';
-      avatar.innerText = '🤖';
+      avatar.innerText = '💚';
 
       const typing = document.createElement('div');
       typing.className = 'typing-indicator';
@@ -357,16 +370,19 @@
 
       // If it looks like code, give code response
       if (lower.includes('{') || lower.includes('[') || lower.includes('function') || lower.includes('const')) {
-        return "أنا شايف الكود! 💻 حط لي المشكلة اللي واجهة بالضبط وأنا نساعدك!";
+        return "أنا شايف الكود! 💻 حط لي المشكلة اللي واجهة وأنا نساعدك!";
       }
 
-      // Random encouragement
+      // Random encouragement from Louay
       const encouragements = [
-        "هذا سؤال حلو! 🤔 فكرة كويسة - واصل!",
-        "👍 راني شايف وجهة نظرك!",
-        "مشكل حقيقي! 💚 نجم نشتغل عليه!",
-        "ممتاز! 🎯 شنوّ التفاصيل الكاملة?",
-        "لله الحمد على الأفكار! 📝 زيد قول لي شي حاجة?"
+        "يا لؤاي! هذا سؤال حلو! 🤔 واصل!",
+        "👍 راني شايف وجهة نظرك يا صديقي!",
+        "مشكل حقيقي يا لؤاي! 💚 نجم نشتغل عليه!",
+        "ممتاز يا عزيز! 🎯 شنوّ التفاصيل الكاملة?",
+        "لله الحمد على الأفكار! 📝 زيد قول لي شي حاجة?",
+        "أنت فاهم يا لؤاي! 💡 هذا ذكي!",
+        "راني معاك يا صديقي! 🤝 خدينا الحل!",
+        "أحسن فكرة شفتها اليوم! 🌟 قول لي الباقي!"
       ];
       return encouragements[Math.floor(Math.random() * encouragements.length)];
     }
@@ -387,9 +403,9 @@
       messageInput.focus();
     });
 
-    // Welcome message
+    // Welcome message - Louay's welcome
     window.addEventListener('load', () => {
-      addMessage("السلام عليكم! 👋 أنا بوت ذكي أخضر! اكتب أي سؤال أو كود وأنا نرد عليك في الحال. شنوّ اللي بديك?", 'bot');
+      addMessage("السلام عليكم يا لؤاي! 💚 أنا بوتك الخاص 'ONLY Louay'. اكتب أي كود أو سؤال أو حاجة عادية وأنا نرد عليك في الحال! شنوّ اللي بديك يا صديقي?", 'bot');
       messageInput.focus();
     });
   </script>
