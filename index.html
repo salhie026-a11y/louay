@@ -3,115 +3,132 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>وصول التيرمينال</title>
+  <title>وصول التيرمينال — محرّر</title>
   <style>
     :root {
       --main-color: #ff0033;
       --bg-color: #050000;
       --panel-bg: rgba(20, 0, 0, 0.85);
+      --muted: #999;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
     body {
       background-color: var(--bg-color);
       color: var(--main-color);
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
       overflow: hidden;
       text-shadow: 0 0 5px var(--main-color);
     }
-    .bg-grid { position: fixed; inset: 0; background: radial-gradient(circle, rgba(255,0,51,0.1) 0%, rgba(0,0,0,0.9) 100%); z-index: -1; }
+
+    .bg-grid { position: fixed; inset: 0; background: radial-gradient(circle, rgba(255,0,51,0.08) 0%, rgba(0,0,0,0.95) 100%); z-index: -1; }
+
     header {
-      padding: 15px;
+      padding: 12px 16px;
       border-bottom: 1px solid var(--main-color);
-      text-align: center;
       background: var(--panel-bg);
-      font-size: 14px;
-      font-weight: bold;
-      letter-spacing: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
     }
-    main { display:flex; flex-direction:column; flex-grow:1; }
-    #login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; flex-grow:1; padding:20px; }
-    .login-box {
-      background: var(--panel-bg);
-      border: 1px solid var(--main-color);
-      padding: 25px;
-      border-radius: 8px;
-      width: 100%;
-      max-width: 360px;
-      text-align: center;
-      box-shadow: 0 0 15px rgba(255,0,51,0.3);
-    }
-    label { display:block; margin-bottom:8px; font-size:16px; color:var(--main-color); }
-    input[type="password"] {
-      width:100%;
-      padding:12px;
-      margin:8px 0 12px 0;
-      background:#000;
-      border:1px solid var(--main-color);
-      color:var(--main-color);
-      text-align:center;
-      font-size:18px;
-      letter-spacing:5px;
-      outline:none;
-      direction:ltr; /* أرقام تقرا LTR حتى في صفحة RTL */
-    }
-    button {
-      width:100%;
-      padding:12px;
-      background:var(--main-color);
-      color:#000;
-      border:none;
-      font-weight:bold;
-      font-size:16px;
-      cursor:pointer;
-    }
-    input:focus, button:focus {
-      outline:3px solid rgba(255,0,51,0.35);
-      outline-offset:2px;
-    }
-    #terminal-screen { display:none; flex-direction:column; flex-grow:1; padding:15px; overflow-y:auto; }
-    .terminal-log { font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
-    .status-bar { padding:10px; border-top:1px solid var(--main-color); background:var(--panel-bg); font-size:12px; display:flex; justify-content:space-between; }
+
+    header h1 { font-size: 16px; letter-spacing: 1px; }
+    header nav { display: flex; gap: 8px; align-items: center; }
+    .btn { background: var(--main-color); color:#000; border:none; padding:8px 12px; font-weight:600; cursor:pointer; border-radius:4px; }
+    .ghost { background: transparent; border:1px solid var(--main-color); color:var(--main-color); }
+
+    main { display: flex; gap: 16px; padding: 16px; flex: 1; overflow: hidden; }
+
+    /* Left: Terminal / Login column */
+    .col { flex: 1 1 480px; display:flex; flex-direction:column; gap:12px; min-width: 320px; }
+
+    .panel { background: var(--panel-bg); border:1px solid var(--main-color); padding:12px; border-radius:8px; box-shadow: 0 0 12px rgba(255,0,51,0.15); overflow: hidden; }
+
+    /* Login */
+    #login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 8px; }
+    .login-box { width:100%; max-width:360px; text-align:center; }
+    label { display:block; margin-bottom:8px; font-size:15px; color:var(--main-color); }
+    input[type="password"] { width:100%; padding:10px; background:#000; border:1px solid var(--main-color); color:var(--main-color); text-align:center; font-size:16px; letter-spacing:6px; direction:ltr; }
+
+    /* Terminal */
+    #terminal-screen { display:none; flex-direction:column; padding:8px; gap:8px; height: 320px; overflow:auto; }
+    .terminal-log { font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-word; }
+
+    /* Editor column */
+    .editor { flex: 1 1 520px; display:flex; flex-direction:column; gap:8px; min-width: 360px; }
+    .editor .controls { display:flex; gap:8px; align-items:center; }
+    .editor input[type="text"] { flex:1; padding:8px; background:#000; border:1px solid var(--main-color); color:var(--main-color); }
+    .editor textarea { flex:1; min-height:320px; resize:vertical; padding:12px; background:#000; border:1px solid var(--main-color); color:var(--main-color); font-size:15px; line-height:1.6; }
+
+    .drafts { max-height: 240px; overflow:auto; padding:8px; display:flex; flex-direction:column; gap:6px; }
+    .draft-item { display:flex; justify-content:space-between; gap:8px; background:rgba(0,0,0,0.15); padding:8px; border-radius:6px; align-items:center; }
+    .muted { color:var(--muted); font-size:13px; }
+
+    .status-bar { padding:10px; border-top:1px solid var(--main-color); background: var(--panel-bg); font-size:12px; display:flex; justify-content:space-between; align-items:center; }
+
     .error-msg { color:#ff6666; margin-top:10px; font-size:12px; display:none; }
-    @media (prefers-reduced-motion: reduce) {
-      .terminal-log { transition: none !important; }
-    }
+
+    @media (prefers-reduced-motion: reduce) { .terminal-log { transition:none !important; } }
+
+    footer { padding:8px 16px; font-size:12px; color:var(--muted); }
+
+    /* focus */
+    :focus { outline: 3px solid rgba(255,0,51,0.25); outline-offset:3px; }
+
   </style>
 </head>
 <body>
   <div class="bg-grid" aria-hidden="true"></div>
 
-  <header role="banner">SYSTEM ACCESS // RED-TERMINAL v2.0</header>
+  <header role="banner">
+    <h1>RED-TERMINAL — محرّر الكتابات</h1>
+    <nav>
+      <button id="open-editor" class="btn">محرّر</button>
+      <button id="show-terminal" class="btn ghost">التيرمينال</button>
+    </nav>
+  </header>
 
   <main>
-    <section id="login-screen" aria-labelledby="login-title">
-      <div class="login-box" role="region" aria-labelledby="login-title">
-        <h3 id="login-title">حطّ الكود متاعك</h3>
+    <section class="col">
+      <div class="panel" id="login-panel">
+        <div id="login-screen">
+          <div class="login-box">
+            <h3 id="login-title">حطّ الكود متاعك</h3>
+            <form id="accessForm" novalidate>
+              <label for="accessCode">كود من 5 أرقام</label>
+              <input type="password" id="accessCode" name="accessCode" inputmode="numeric" pattern="\d{5}" maxlength="5" autocomplete="one-time-code" aria-describedby="error" aria-required="true" dir="ltr" />
+              <div style="height:8px"></div>
+              <button type="submit" id="confirmBtn" class="btn">أكّد</button>
+              <div id="error" class="error-msg" role="alert" aria-live="assertive">الكود غالط! عاود جرّب</div>
+            </form>
+          </div>
+        </div>
 
-        <form id="accessForm" novalidate>
-          <label for="accessCode">كود من 5 أرقام</label>
-          <input
-            type="password"
-            id="accessCode"
-            name="accessCode"
-            inputmode="numeric"
-            pattern="\d{5}"
-            maxlength="5"
-            autocomplete="one-time-code"
-            aria-describedby="error"
-            aria-required="true"
-            dir="ltr"
-          />
-          <button type="submit" id="confirmBtn">أكّد</button>
-          <div id="error" class="error-msg" role="alert" aria-live="assertive">الكود غالط! عاود جرّب</div>
-        </form>
+        <div id="terminal-screen" aria-hidden="true">
+          <div class="terminal-log" id="log" role="log" aria-live="polite" aria-atomic="false" tabindex="-1"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="muted">نجم تعرض التيرمينال أو تكتب مقالات في العمود الجنب</div>
       </div>
     </section>
 
-    <section id="terminal-screen" aria-hidden="true">
-      <div class="terminal-log" id="log" role="log" aria-live="polite" aria-atomic="false" tabindex="-1"></div>
+    <section class="editor panel">
+      <div class="controls">
+        <input type="text" id="title" placeholder="عنوان الكتابة" aria-label="عنوان" />
+        <button id="saveBtn" class="btn">حفظ مسودة</button>
+        <button id="downloadBtn" class="btn ghost">تحميل</button>
+      </div>
+
+      <textarea id="content" placeholder="اكتب توا -- النص محفوظ محلياً تلقائياً" aria-label="محتوى الكتابة"></textarea>
+
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><strong>قائمة المسودات</strong><span id="autosaveStatus" class="muted">—</span></div>
+        <div class="drafts" id="draftsList" aria-live="polite"></div>
+      </div>
     </section>
   </main>
 
@@ -120,8 +137,10 @@
     <span>DEVICE: MOBILE_NODE</span>
   </div>
 
+  <footer>التخزين محلي — المسودات محفوظة في المتصفح. لإرسالها للـ GitHub يلزم Token، نعاونك بعدين لو تحب.</footer>
+
   <script>
-    // ملاحظة: في تطبيق حقيقي ما تخبّيش الكود في الجافاسكربت
+    // Existing terminal/login logic
     const CORRECT_CODE = "55541";
     const logs = [
       "[SYSTEM] الوصول مقبول. مرحبا بيك قائد.",
@@ -141,32 +160,30 @@
     const terminalScreen = document.getElementById('terminal-screen');
     const statusText = document.getElementById('status-text');
     const logDiv = document.getElementById('log');
+    const showTerminalBtn = document.getElementById('show-terminal');
+    const openEditorBtn = document.getElementById('open-editor');
 
     form.addEventListener('submit', function(e) {
       e.preventDefault();
       const value = input.value.trim();
       if (value === CORRECT_CODE) {
-        // خفية الشاشة متاع الدخول ووري التيرمينال
         loginScreen.style.display = 'none';
         loginScreen.setAttribute('aria-hidden', 'true');
-        terminalScreen.style.display = 'flex';
+        terminalScreen.style.display = 'block';
         terminalScreen.setAttribute('aria-hidden', 'false');
         statusText.innerText = 'ONLINE';
         errorDiv.style.display = 'none';
         logDiv.innerHTML = '';
-        // حطّ الفوكس في لوغ باش الشاشة تقرأ التحديثات
         logDiv.focus();
         runTerminal();
       } else {
         errorDiv.style.display = 'block';
-        // نركّز على الخطأ باش يشفروه القارئات
         errorDiv.focus();
       }
     });
 
     function runTerminal() {
       let index = 0;
-      // احترم reduced motion: لو المستخدم يفضّل أقل حركة نعرض الكل مباشرة
       const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (prefersReduced) {
         logDiv.innerHTML = logs.join('\n').replace(/\n/g, '<br>');
@@ -174,16 +191,153 @@
       }
       const interval = setInterval(() => {
         if (index < logs.length) {
-          // زيد سطر جديد وخلّي القارئ يعرف التحديث
           logDiv.innerHTML += logs[index] + '<br>';
           index++;
-          // scroll to bottom
           logDiv.scrollTop = logDiv.scrollHeight;
         } else {
           clearInterval(interval);
         }
       }, 800);
     }
+
+    // Editor functionality (localStorage drafts)
+    const DRAFTS_KEY = 'louay_drafts_v1';
+    const titleEl = document.getElementById('title');
+    const contentEl = document.getElementById('content');
+    const saveBtn = document.getElementById('saveBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const draftsList = document.getElementById('draftsList');
+    const autosaveStatus = document.getElementById('autosaveStatus');
+
+    function loadDrafts() {
+      try {
+        const raw = localStorage.getItem(DRAFTS_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        console.error('Failed to load drafts', e);
+        return [];
+      }
+    }
+
+    function saveDraft(title, content) {
+      const drafts = loadDrafts();
+      const id = Date.now();
+      drafts.unshift({ id, title: title || 'بدون عنوان', content, updated: new Date().toISOString() });
+      localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+      renderDrafts();
+      autosaveStatus.innerText = 'محفوظ';
+      setTimeout(() => { autosaveStatus.innerText = '—'; }, 1500);
+    }
+
+    function renderDrafts() {
+      const drafts = loadDrafts();
+      draftsList.innerHTML = '';
+      if (drafts.length === 0) {
+        draftsList.innerHTML = '<div class="muted">ما ثمّش مسودات</div>';
+        return;
+      }
+      drafts.forEach(d => {
+        const item = document.createElement('div');
+        item.className = 'draft-item';
+        const left = document.createElement('div');
+        left.innerHTML = `<div><strong>${escapeHtml(d.title)}</strong></div><div class=\"muted\">${new Date(d.updated).toLocaleString()}</div>`;
+        const actions = document.createElement('div');
+        actions.style.display = 'flex';
+        actions.style.gap = '6px';
+        const openBtn = document.createElement('button');
+        openBtn.className = 'btn ghost';
+        openBtn.innerText = 'فتح';
+        openBtn.addEventListener('click', () => { titleEl.value = d.title; contentEl.value = d.content; autosaveStatus.innerText = 'تمّ الفتح'; setTimeout(()=>autosaveStatus.innerText='—',1200); window.scrollTo({top:0, behavior:'smooth'}); });
+        const dlBtn = document.createElement('button');
+        dlBtn.className = 'btn';
+        dlBtn.innerText = 'تحميل';
+        dlBtn.addEventListener('click', () => downloadText(d.title, d.content));
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn ghost';
+        delBtn.innerText = 'حذف';
+        delBtn.addEventListener('click', () => { deleteDraft(d.id); });
+        actions.appendChild(openBtn);
+        actions.appendChild(dlBtn);
+        actions.appendChild(delBtn);
+        item.appendChild(left);
+        item.appendChild(actions);
+        draftsList.appendChild(item);
+      });
+    }
+
+    function deleteDraft(id) {
+      let drafts = loadDrafts();
+      drafts = drafts.filter(d => d.id !== id);
+      localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+      renderDrafts();
+    }
+
+    function downloadText(title, content) {
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (title || 'untitled') + '.txt';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    saveBtn.addEventListener('click', () => {
+      saveDraft(titleEl.value.trim(), contentEl.value);
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      downloadText(titleEl.value || 'untitled', contentEl.value || '');
+    });
+
+    // Autosave every 5 seconds if content changed
+    let lastSaved = '';
+    setInterval(() => {
+      const cur = contentEl.value;
+      if (cur && cur !== lastSaved) {
+        // store temporary draft (not added to drafts list)
+        localStorage.setItem('louay_autosave', JSON.stringify({ title: titleEl.value || '', content: cur, updated: new Date().toISOString() }));
+        autosaveStatus.innerText = 'حفظ تلقائي';
+        setTimeout(()=>{ autosaveStatus.innerText = '—'; },900);
+        lastSaved = cur;
+      }
+    }, 5000);
+
+    // load autosave on start
+    window.addEventListener('load', () => {
+      renderDrafts();
+      const auto = localStorage.getItem('louay_autosave');
+      if (auto) {
+        try {
+          const obj = JSON.parse(auto);
+          if (obj && obj.content) {
+            contentEl.value = obj.content;
+            titleEl.value = obj.title || '';
+            autosaveStatus.innerText = 'تمّت استرجاع المسودة التلقائية';
+            setTimeout(()=>autosaveStatus.innerText='—',1500);
+          }
+        } catch (e) { /* ignore */ }
+      }
+    });
+
+    // Utilities
+    function escapeHtml(text){
+      return (text+'').replace(/[&<>\"']/g, function(c){
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+      });
+    }
+
+    // show/hide UI helpers
+    showTerminalBtn.addEventListener('click', () => {
+      document.getElementById('login-panel').scrollIntoView({ behavior: 'smooth' });
+    });
+    openEditorBtn.addEventListener('click', () => {
+      document.querySelector('.editor').scrollIntoView({ behavior: 'smooth' });
+      contentEl.focus();
+    });
+
   </script>
 </body>
 </html>
