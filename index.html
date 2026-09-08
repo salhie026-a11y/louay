@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>وصول التيرمينال</title>
+  <style>
+    :root {
+      --main-color: #ff0033;
+      --bg-color: #050000;
+      --panel-bg: rgba(20, 0, 0, 0.85);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
+    body {
+      background-color: var(--bg-color);
+      color: var(--main-color);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      text-shadow: 0 0 5px var(--main-color);
+    }
+    .bg-grid { position: fixed; inset: 0; background: radial-gradient(circle, rgba(255,0,51,0.1) 0%, rgba(0,0,0,0.9) 100%); z-index: -1; }
+    header {
+      padding: 15px;
+      border-bottom: 1px solid var(--main-color);
+      text-align: center;
+      background: var(--panel-bg);
+      font-size: 14px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+    main { display:flex; flex-direction:column; flex-grow:1; }
+    #login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; flex-grow:1; padding:20px; }
+    .login-box {
+      background: var(--panel-bg);
+      border: 1px solid var(--main-color);
+      padding: 25px;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      box-shadow: 0 0 15px rgba(255,0,51,0.3);
+    }
+    label { display:block; margin-bottom:8px; font-size:16px; color:var(--main-color); }
+    input[type="password"] {
+      width:100%;
+      padding:12px;
+      margin:8px 0 12px 0;
+      background:#000;
+      border:1px solid var(--main-color);
+      color:var(--main-color);
+      text-align:center;
+      font-size:18px;
+      letter-spacing:5px;
+      outline:none;
+      direction:ltr; /* أرقام تقرا LTR حتى في صفحة RTL */
+    }
+    button {
+      width:100%;
+      padding:12px;
+      background:var(--main-color);
+      color:#000;
+      border:none;
+      font-weight:bold;
+      font-size:16px;
+      cursor:pointer;
+    }
+    input:focus, button:focus {
+      outline:3px solid rgba(255,0,51,0.35);
+      outline-offset:2px;
+    }
+    #terminal-screen { display:none; flex-direction:column; flex-grow:1; padding:15px; overflow-y:auto; }
+    .terminal-log { font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .status-bar { padding:10px; border-top:1px solid var(--main-color); background:var(--panel-bg); font-size:12px; display:flex; justify-content:space-between; }
+    .error-msg { color:#ff6666; margin-top:10px; font-size:12px; display:none; }
+    @media (prefers-reduced-motion: reduce) {
+      .terminal-log { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <header role="banner">SYSTEM ACCESS // RED-TERMINAL v2.0</header>
+
+  <main>
+    <section id="login-screen" aria-labelledby="login-title">
+      <div class="login-box" role="region" aria-labelledby="login-title">
+        <h3 id="login-title">حطّ الكود متاعك</h3>
+
+        <form id="accessForm" novalidate>
+          <label for="accessCode">كود من 5 أرقام</label>
+          <input
+            type="password"
+            id="accessCode"
+            name="accessCode"
+            inputmode="numeric"
+            pattern="\d{5}"
+            maxlength="5"
+            autocomplete="one-time-code"
+            aria-describedby="error"
+            aria-required="true"
+            dir="ltr"
+          />
+          <button type="submit" id="confirmBtn">أكّد</button>
+          <div id="error" class="error-msg" role="alert" aria-live="assertive">الكود غالط! عاود جرّب</div>
+        </form>
+      </div>
+    </section>
+
+    <section id="terminal-screen" aria-hidden="true">
+      <div class="terminal-log" id="log" role="log" aria-live="polite" aria-atomic="false" tabindex="-1"></div>
+    </section>
+  </main>
+
+  <div class="status-bar" role="contentinfo">
+    <span>STATUS: <span id="status-text" aria-live="polite">LOCKED</span></span>
+    <span>DEVICE: MOBILE_NODE</span>
+  </div>
+
+  <script>
+    // ملاحظة: في تطبيق حقيقي ما تخبّيش الكود في الجافاسكربت
+    const CORRECT_CODE = "55541";
+    const logs = [
+      "[SYSTEM] الوصول مقبول. مرحبا بيك قائد.",
+      "[INFO] ربط بالنود المحمية...",
+      "[NET] التبادل مشفّر.",
+      "[OK] تجاوز الحائط الناري الثاني...",
+      "[DATA] نستخرج لوجات السيرفر...",
+      "[WARN] نقطة وصول غير موثوق فيها.",
+      "[SYSTEM] تهيئة RED-PROTOCOL...",
+      "[OK] السيستام واجد للأوامر."
+    ];
+
+    const form = document.getElementById('accessForm');
+    const input = document.getElementById('accessCode');
+    const errorDiv = document.getElementById('error');
+    const loginScreen = document.getElementById('login-screen');
+    const terminalScreen = document.getElementById('terminal-screen');
+    const statusText = document.getElementById('status-text');
+    const logDiv = document.getElementById('log');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const value = input.value.trim();
+      if (value === CORRECT_CODE) {
+        // خفية الشاشة متاع الدخول ووري التيرمينال
+        loginScreen.style.display = 'none';
+        loginScreen.setAttribute('aria-hidden', 'true');
+        terminalScreen.style.display = 'flex';
+        terminalScreen.setAttribute('aria-hidden', 'false');
+        statusText.innerText = 'ONLINE';
+        errorDiv.style.display = 'none';
+        logDiv.innerHTML = '';
+        // حطّ الفوكس في لوغ باش الشاشة تقرأ التحديثات
+        logDiv.focus();
+        runTerminal();
+      } else {
+        errorDiv.style.display = 'block';
+        // نركّز على الخطأ باش يشفروه القارئات
+        errorDiv.focus();
+      }
+    });
+
+    function runTerminal() {
+      let index = 0;
+      // احترم reduced motion: لو المستخدم يفضّل أقل حركة نعرض الكل مباشرة
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReduced) {
+        logDiv.innerHTML = logs.join('\n').replace(/\n/g, '<br>');
+        return;
+      }
+      const interval = setInterval(() => {
+        if (index < logs.length) {
+          // زيد سطر جديد وخلّي القارئ يعرف التحديث
+          logDiv.innerHTML += logs[index] + '<br>';
+          index++;
+          // scroll to bottom
+          logDiv.scrollTop = logDiv.scrollHeight;
+        } else {
+          clearInterval(interval);
+        }
+      }, 800);
+    }
+  </script>
+</body>
+</html>
